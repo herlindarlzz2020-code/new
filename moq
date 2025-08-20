@@ -1,0 +1,96 @@
+using Xunit;
+using Moq;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using CareerConnect.Controllers;
+using CareerConnect.Models;
+using CareerConnect.Services;
+
+namespace CareerConnect.Tests.Controllers
+{
+    // ===================== AuthController Tests =====================
+    public class AuthControllerTests
+    {
+        private readonly Mock<IAuthService> _authServiceMock;
+        private readonly AuthController _controller;
+
+        public AuthControllerTests()
+        {
+            _authServiceMock = new Mock<IAuthService>();
+            _controller = new AuthController(_authServiceMock.Object);
+        }
+
+        [Fact]
+        public async Task Login_ReturnsOk_WhenValidUser()
+        {
+            // Arrange
+            var loginDto = new LoginDTO { Email = "test@test.com", Password = "pass" };
+            _authServiceMock.Setup(s => s.LoginAsync(loginDto))
+                .ReturnsAsync("fake-jwt-token");
+
+            // Act
+            var result = await _controller.Login(loginDto);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal("fake-jwt-token", okResult.Value);
+        }
+    }
+
+    // ===================== JobController Tests =====================
+    public class JobControllerTests
+    {
+        private readonly Mock<IJobService> _jobServiceMock;
+        private readonly JobController _controller;
+
+        public JobControllerTests()
+        {
+            _jobServiceMock = new Mock<IJobService>();
+            _controller = new JobController(_jobServiceMock.Object);
+        }
+
+        [Fact]
+        public async Task GetJobs_ReturnsOk_WithListOfJobs()
+        {
+            // Arrange
+            var jobs = new List<Job> { new Job { JobId = 1, Title = "Dev" } };
+            _jobServiceMock.Setup(s => s.GetAllJobsAsync()).ReturnsAsync(jobs);
+
+            // Act
+            var result = await _controller.GetJobs();
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnJobs = Assert.IsAssignableFrom<IEnumerable<Job>>(okResult.Value);
+            Assert.Single(returnJobs);
+        }
+    }
+
+    // ===================== ApplicationController Tests =====================
+    public class ApplicationControllerTests
+    {
+        private readonly Mock<IApplicationService> _appServiceMock;
+        private readonly ApplicationController _controller;
+
+        public ApplicationControllerTests()
+        {
+            _appServiceMock = new Mock<IApplicationService>();
+            _controller = new ApplicationController(_appServiceMock.Object);
+        }
+
+        [Fact]
+        public async Task ApplyJob_ReturnsOk_WhenApplicationIsValid()
+        {
+            // Arrange
+            var dto = new ApplicationDTO { JobId = 1, JobSeekerId = 1 };
+            _appServiceMock.Setup(s => s.ApplyJobsAsync(dto)).Returns(Task.CompletedTask);
+
+            // Act
+            var result = await _controller.ApplyJob(dto);
+
+            // Assert
+            Assert.IsType<OkResult>(result);
+        }
+    }
+}
